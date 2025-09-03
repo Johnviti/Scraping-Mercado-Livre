@@ -166,8 +166,12 @@ cython_debug/
 # Diagnósticos e logs
 diagnostico_ml/
 *.png
-*.html
-*.json
+# *.html  # Comentado para permitir swagger-ui.html
+# *.json  # Comentado para permitir vercel.json
+
+# Permitir arquivos específicos necessários para Vercel
+!vercel.json
+!swagger-ui.html
 *.csv
 
 # Selenium

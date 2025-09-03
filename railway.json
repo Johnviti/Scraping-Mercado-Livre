@@ -1,0 +1,23 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "pip install -r requirements-railway.txt && python install_playwright.py"
+  },
+  "deploy": {
+    "startCommand": "gunicorn --bind 0.0.0.0:8080 --workers 1 --timeout 300 --keep-alive 10 --max-requests 500 --max-requests-jitter 50 api:app",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 60
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "PLAYWRIGHT_BROWSERS_PATH": "/app/.cache/ms-playwright",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD": "false",
+        "PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS": "true",
+        "NODE_ENV": "production",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}

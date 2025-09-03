@@ -143,3 +143,40 @@ def novo_endpoint():
 Para debug local, use os scripts existentes:
 - `debug_requests_ml.py`: Testa scraping com requests
 - `debug_selenium_ml.py`: Testa scraping com selenium
+
+
+### URLs de Tracking Complexas (Suportadas)
+
+A API agora suporta URLs de tracking complexas do Mercado Livre, incluindo:
+
+- URLs do tipo `click1.mercadolivre.com.br`
+- URLs com parâmetros de tracking e analytics
+- URLs que redirecionam para produtos específicos
+
+**Exemplo de URL suportada:**
+```
+https://click1.mercadolivre.com.br/mclics/clicks/external/MLB/count?a=...
+```
+
+**Como funciona:**
+1. A API detecta automaticamente URLs de tracking
+2. Segue os redirects para encontrar a URL final do produto
+3. Extrai os dados do produto da página final
+
+**Resposta de sucesso:**
+```json
+{
+  "success": true,
+  "original_url": "https://click1.mercadolivre.com.br/mclics/...",
+  "used_url": "https://produto.mercadolivre.com.br/MLB-123456789",
+  "product": {
+    "title": "Nome do Produto",
+    "price": 99.99,
+    "mlb_id": "MLB123456789",
+    "seller_name": "Nome do Vendedor"
+  }
+}
+```
+
+## Acesse a documentação interativa:
+   - Abra seu navegador e vá para: `/docs`

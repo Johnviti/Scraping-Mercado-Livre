@@ -1,0 +1,47 @@
+[build]
+cmd = "pip install -r requirements.txt"
+
+[deploy]
+startCommand = "gunicorn --bind 0.0.0.0:8080 --workers 1 --timeout 600 --max-requests 50 --preload --worker-class sync api:app"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+
+[env]
+GUNICORN_WORKERS = "2"
+GUNICORN_TIMEOUT = "600"
+GUNICORN_MAX_REQUESTS = "50"
+WEB_MEMORY = "1024"
+nixpacks = true
+
+[deploy.healthcheck]
+path = "/health"
+timeout = 300
+interval = 45
+
+[[deploy.environmentVariables]]
+name = "PYTHONUNBUFFERED"
+value = "1"
+
+[[deploy.environmentVariables]]
+name = "FLASK_ENV"
+value = "production"
+
+[[deploy.environmentVariables]]
+name = "WEB_CONCURRENCY"
+value = "1"
+
+[[deploy.environmentVariables]]
+name = "MAX_REQUESTS"
+value = "50"
+
+[[deploy.environmentVariables]]
+name = "REQUEST_TIMEOUT"
+value = "600"
+
+[[deploy.environmentVariables]]
+name = "RAILWAY_ENVIRONMENT"
+value = "production"
+
+[[deploy.environmentVariables]]
+name = "PORT"
+value = "8080"

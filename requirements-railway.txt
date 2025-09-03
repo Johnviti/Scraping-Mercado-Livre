@@ -1,0 +1,12 @@
+flask==2.3.3
+flask-cors==4.0.0
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+numpy==1.24.3
+pandas==2.0.3
+playwright==1.40.0
+gunicorn==21.2.0
+psutil==5.9.6
+Pillow==10.0.1
+pytesseract==0.3.10

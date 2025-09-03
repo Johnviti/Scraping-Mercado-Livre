@@ -1,0 +1,34 @@
+# nixpacks.toml - Configuração para Railway
+[phases.setup]
+cmds = [
+    "apt-get update",
+    "apt-get install -y wget gnupg python3 python3-pip python3-venv",
+    "wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -",
+    "sh -c 'echo \"deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main\" >> /etc/apt/sources.list.d/google.list'",
+    "apt-get update",
+    "apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 --no-install-recommends",
+    "python3 -m venv /opt/venv",
+    "source /opt/venv/bin/activate"
+]
+
+[phases.install]
+cmds = [
+    "source /opt/venv/bin/activate && pip install -r requirements-railway.txt"
+]
+
+[phases.build]
+cmds = [
+    "source /opt/venv/bin/activate && python install_playwright.py"
+]
+
+[start]
+cmd = "source /opt/venv/bin/activate &&start = "gunicorn --bind 0.0.0.0:8080 --workers 1 --timeout 600 --keep-alive 10 --max-requests 500 --max-requests-jitter 50 api:app"
+
+[variables]
+PATH = "/opt/venv/bin:$PATH"
+VIRTUAL_ENV = "/opt/venv"
+PLAYWRIGHT_BROWSERS_PATH = "/app/.cache/ms-playwright"
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "false"
+PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true"
+NODE_ENV = "production"
+PYTHONUNBUFFERED = "1"

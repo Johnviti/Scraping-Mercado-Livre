@@ -1,0 +1,564 @@
+openapi: 3.0.3
+info:
+  title: API de Scraping Mercado Livre
+  description: |
+    API para fazer scraping de produtos do Mercado Livre.
+    
+    Esta API permite:
+    - Fazer scraping de URLs específicas do Mercado Livre
+    - Buscar produtos por termo de pesquisa
+    - Listar categorias populares
+    - Verificar status da API
+    
+    **Importante**: Esta API é destinada apenas para fins educacionais e de pesquisa.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:5000
+    description: Servidor de desenvolvimento local
+
+paths:
+  /:
+    get:
+      summary: Informações da API
+      description: Retorna informações básicas sobre a API e seus endpoints disponíveis
+      tags:
+        - Informações
+      responses:
+        '200':
+          description: Informações da API retornadas com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "API de Scraping Mercado Livre"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  endpoints:
+                    type: object
+                    properties:
+                      "/scrape":
+                        type: string
+                        example: "POST - Faz scraping de uma URL do Mercado Livre"
+                      "/scrape-product":
+                        type: string
+                        example: "POST - Busca produtos por termo (simplificado)"
+                      "/scrape-product-details":
+                        type: string
+                        example: "POST - Faz scraping detalhado de um produto específico por URL"
+                      "/search":
+                        type: string
+                        example: "GET - Busca produtos por termo"
+                      "/health":
+                        type: string
+                        example: "GET - Status da API"
+                  usage:
+                    type: object
+                    properties:
+                      scrape:
+                        type: string
+                        example: "POST /scrape com body: {'url': 'https://lista.mercadolivre.com.br/...'}"
+                      scrape_product:
+                        type: string
+                        example: "POST /scrape-product com body: {'search_term': 'iphone', 'limit': 20}"
+                      scrape_product_details:
+                        type: string
+                        example: "POST /scrape-product-details com body: {'url': 'https://produto.mercadolivre.com.br/MLB-123456789-produto'}"
+                      search:
+                        type: string
+                        example: "GET /search?q=termo_busca&limit=50"
+
+  /health:
+    get:
+      summary: Health Check
+      description: Verifica se a API está funcionando corretamente
+      tags:
+        - Monitoramento
+      responses:
+        '200':
+          description: API está funcionando
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: number
+                    format: float
+                    example: 1703123456.789
+
+  /scrape:
+    post:
+      summary: Fazer scraping de URL específica
+      description: |
+        Faz scraping de uma URL específica do Mercado Livre e retorna os produtos encontrados.
+        
+        A URL deve ser uma URL válida do Mercado Livre (mercadolivre.com.br ou mercadolibre.com).
+      tags:
+        - Scraping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: URL do Mercado Livre para fazer scraping
+                  example: "https://lista.mercadolivre.com.br/celulares"
+            examples:
+              categoria:
+                summary: URL de categoria
+                value:
+                  url: "https://lista.mercadolivre.com.br/eletronicos"
+              busca:
+                summary: URL de busca
+                value:
+                  url: "https://lista.mercadolivre.com.br/iphone"
+      responses:
+        '200':
+          description: Scraping realizado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScrapingResponse'
+        '400':
+          description: Erro na requisição (URL inválida ou ausente)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                url_obrigatoria:
+                  summary: URL não fornecida
+                  value:
+                    error: "URL é obrigatória"
+                url_invalida:
+                  summary: URL não é do Mercado Livre
+                  value:
+                    error: "URL deve ser do Mercado Livre"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /search:
+    get:
+      summary: Buscar produtos por termo
+      description: |
+        Busca produtos no Mercado Livre usando um termo de pesquisa.
+        
+        Constrói automaticamente a URL de busca e faz o scraping dos resultados.
+      tags:
+        - Scraping
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Termo de busca para os produtos
+          schema:
+            type: string
+            example: "iphone 15"
+        - name: limit
+          in: query
+          required: false
+          description: Número máximo de produtos a retornar (máximo 200)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+            example: 50
+      responses:
+        '200':
+          description: Busca realizada com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ScrapingResponse'
+                  - type: object
+                    properties:
+                      query:
+                        type: string
+                        description: Termo de busca utilizado
+                        example: "iphone 15"
+                      search_url:
+                        type: string
+                        format: uri
+                        description: URL de busca construída
+                        example: "https://lista.mercadolivre.com.br/iphone-15"
+        '400':
+          description: Parâmetro de busca obrigatório não fornecido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Parâmetro 'q' (query) é obrigatório"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /categories:
+    get:
+      summary: Listar categorias populares
+      description: Retorna uma lista de categorias populares do Mercado Livre com suas URLs
+      tags:
+        - Categorias
+      responses:
+        '200':
+          description: Lista de categorias retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: Nome da categoria
+                          example: "Eletrônicos"
+                        url:
+                          type: string
+                          format: uri
+                          description: URL da categoria no Mercado Livre
+                          example: "https://lista.mercadolivre.com.br/eletronicos"
+                    example:
+                      - name: "Eletrônicos"
+                        url: "https://lista.mercadolivre.com.br/eletronicos"
+                      - name: "Roupas"
+                        url: "https://lista.mercadolivre.com.br/roupas"
+                      - name: "Casa"
+                        url: "https://lista.mercadolivre.com.br/casa"
+
+  /scrape-product:
+    post:
+      summary: Buscar produtos por termo (simplificado)
+      description: |
+        Busca produtos no Mercado Livre usando um termo de pesquisa de forma simplificada.
+        
+        Constrói automaticamente a URL de busca e faz o scraping dos resultados.
+        Este endpoint é uma versão simplificada que aceita apenas o termo de busca.
+      tags:
+        - Scraping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product
+              properties:
+                product:
+                  type: string
+                  description: Termo de busca para os produtos
+                  example: "iphone 15"
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 200
+                  default: 20
+                  description: Número máximo de produtos a retornar
+                  example: 20
+            examples:
+              busca_simples:
+                summary: Busca simples
+                value:
+                  product: "notebook gamer"
+              busca_com_limite:
+                summary: Busca com limite personalizado
+                value:
+                  product: "smartphone samsung"
+                  limit: 10
+      responses:
+        '200':
+          description: Busca realizada com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ScrapingResponse'
+                  - type: object
+                    properties:
+                      product:
+                        type: string
+                        description: Termo de busca utilizado
+                        example: "iphone 15"
+                      search_url:
+                        type: string
+                        format: uri
+                        description: URL de busca construída automaticamente
+                        example: "https://lista.mercadolivre.com.br/iphone-15"
+        '400':
+          description: Parâmetro de busca obrigatório não fornecido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Termo de busca é obrigatório"
+        '500':
+          description: Erro interno do servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /scrape-product-details:
+    post:
+      summary: Fazer scraping detalhado de produto específico
+      description: |
+        Faz scraping detalhado de um produto específico do Mercado Livre usando sua URL.
+        
+        Extrai informações detalhadas como título, preço, imagem, vendedor e MLB ID.
+        A URL deve ser de um produto específico (formato: produto.mercadolivre.com.br/MLB-XXXXXXX).
+      tags:
+        - Scraping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: URL específica do produto no Mercado Livre
+                  example: "https://produto.mercadolivre.com.br/MLB-3902743854-camisa-adidas-real-madrid-il-20232024-original-_JM"
+            examples:
+              produto_real:
+                summary: URL de produto real
+                value:
+                  url: "https://produto.mercadolivre.com.br/MLB-3902743854-camisa-adidas-real-madrid-il-20232024-original-_JM"
+      responses:
+        '200':
+          description: Scraping detalhado realizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  url:
+                    type: string
+                    format: uri
+                    description: URL do produto processada
+                    example: "https://produto.mercadolivre.com.br/MLB-3902743854-camisa-adidas-real-madrid-il-20232024-original-_JM"
+                  product:
+                    $ref: '#/components/schemas/ProductDetails'
+        '400':
+          description: URL inválida ou não fornecida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                url_obrigatoria:
+                  summary: URL não fornecida
+                  value:
+                    error: "URL é obrigatória"
+                url_invalida:
+                  summary: URL não é de produto específico
+                  value:
+                    error: "URL deve ser de um produto específico do Mercado Livre (ex: produto.mercadolivre.com.br/MLB-123456789)"
+        '500':
+          description: Erro interno do servidor ou produto não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                erro_scraping:
+                  summary: Erro ao fazer scraping
+                  value:
+                    error: "Erro ao buscar página: 404 Client Error"
+
+components:
+  schemas:
+    Product:
+      type: object
+      description: Informações de um produto do Mercado Livre
+      properties:
+        title:
+          type: string
+          nullable: true
+          description: Título do produto
+          example: "iPhone 15 Pro Max 256GB Titânio Natural"
+        price:
+          type: string
+          nullable: true
+          description: Preço atual do produto (formato brasileiro)
+          example: "8.999,99"
+        previous_price:
+          type: string
+          nullable: true
+          description: Preço anterior do produto (se houver desconto)
+          example: "9.999,99"
+        discount:
+          type: string
+          nullable: true
+          description: Percentual de desconto
+          example: "10% OFF"
+        brand:
+          type: string
+          nullable: true
+          description: Marca do produto
+          example: "Apple"
+        seller:
+          type: string
+          nullable: true
+          description: Nome do vendedor
+          example: "Apple Store Oficial"
+        rating:
+          type: string
+          nullable: true
+          description: Avaliação do produto
+          example: "4.8"
+        reviews_total:
+          type: string
+          nullable: true
+          description: Número total de avaliações
+          example: "(1.234)"
+        shipping:
+          type: string
+          nullable: true
+          description: Informações de frete
+          example: "Frete grátis"
+        sponsored:
+          type: boolean
+          description: Indica se o produto é patrocinado
+          example: false
+        link:
+          type: string
+          nullable: true
+          format: uri
+          description: Link para o produto
+          example: "https://produto.mercadolivre.com.br/MLB-123456789-iphone-15-pro-max"
+        is_tracking_link:
+          type: boolean
+          description: Indica se o link é de rastreamento
+          example: false
+        image:
+          type: string
+          nullable: true
+          format: uri
+          description: URL da imagem do produto
+          example: "https://http2.mlstatic.com/D_NQ_NP_123456-MLA12345678901_012024-O.webp"
+
+    ScrapingResponse:
+      type: object
+      description: Resposta padrão para operações de scraping
+      properties:
+        success:
+          type: boolean
+          description: Indica se a operação foi bem-sucedida
+          example: true
+        url:
+          type: string
+          format: uri
+          description: URL que foi processada
+          example: "https://lista.mercadolivre.com.br/celulares"
+        status_code:
+          type: integer
+          description: Código de status HTTP da requisição
+          example: 200
+        items_count:
+          type: integer
+          description: Número de produtos encontrados
+          example: 48
+        items:
+          type: array
+          description: Lista de produtos encontrados
+          items:
+            $ref: '#/components/schemas/Product'
+
+    ProductDetails:
+      type: object
+      description: Informações detalhadas de um produto específico do Mercado Livre
+      properties:
+        mlb_id:
+          type: string
+          nullable: true
+          description: ID único do produto no Mercado Livre (MLB)
+          example: "MLB3902743854"
+        title:
+          type: string
+          nullable: true
+          description: Título completo do produto
+          example: "Camisa adidas Real Madrid Il 2023/2024 - Original"
+        price:
+          type: number
+          nullable: true
+          description: Preço atual do produto em reais
+          example: 299.99
+        promo_price:
+          type: number
+          nullable: true
+          description: Preço promocional (se houver)
+          example: 249.99
+        image_url:
+          type: string
+          nullable: true
+          format: uri
+          description: URL da imagem principal do produto
+          example: "https://http2.mlstatic.com/D_NQ_NP_123456-MLA12345678901_012024-O.webp"
+        seller_name:
+          type: string
+          nullable: true
+          description: Nome do vendedor ou loja
+          example: "adidas Loja Oficial"
+
+    ErrorResponse:
+      type: object
+      description: Resposta padrão para erros
+      properties:
+        error:
+          type: string
+          description: Mensagem de erro
+          example: "URL é obrigatória"
+
+tags:
+  - name: Informações
+    description: Endpoints informativos sobre a API
+  - name: Monitoramento
+    description: Endpoints para monitoramento da API
+  - name: Scraping
+    description: Endpoints para fazer scraping de produtos
+  - name: Categorias
+    description: Endpoints relacionados a categorias de produtos

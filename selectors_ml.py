@@ -53,8 +53,21 @@ def parse_list_items(html):
         img_tag = li.select_one(".poly-card__portada img.poly-component__picture[aria-hidden='true'], .poly-card__portada img.poly-component__picture")
         if not img_tag:
             img_tag = li.select_one(".andes-carousel-snapped__slide img.poly-component__picture")
-        if img_tag and img_tag.has_attr("src"):
-            img = img_tag["src"]
+        
+        if img_tag:
+            # Tenta buscar URL real da imagem em diferentes atributos
+            # Prioriza atributos que geralmente contêm URLs reais
+            for attr in ['data-src', 'data-original', 'data-lazy', 'data-zoom', 'src']:
+                if img_tag.has_attr(attr):
+                    potential_img = img_tag[attr]
+                    # Verifica se não é um placeholder base64
+                    if potential_img and not potential_img.startswith('data:image/gif;base64,'):
+                        img = potential_img
+                        break
+            
+            # Se ainda não encontrou uma imagem válida, usa o src mesmo que seja placeholder
+            if not img and img_tag.has_attr("src"):
+                img = img_tag["src"]
 
         if any([title, price, link]):
             items.append({

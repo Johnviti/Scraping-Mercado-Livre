@@ -1,0 +1,1 @@
+web: gunicorn --bind 0.0.0.0:8080 --workers 2 --timeout 600 --graceful-timeout 120 --max-requests 100 --max-requests-jitter 10 --preload --access-logfile - --access-logformat '%(t)s "%(r)s" %(s)s %(L)ss' --error-logfile - api:app
